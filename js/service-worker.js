@@ -5,6 +5,9 @@ const urlsToCache = [
     '../manifest.json',
     '../favicon.ico',
     '../css/tabletop2025.css',
+    '../css/tabletop_animations.css',
+    '../icons/tabletop-pwa-icon-192.png',
+    '../icons/tabletop-pwa-icon-512.png',
     '../js/tabletop.js',
     '../js/main.js'
 ];

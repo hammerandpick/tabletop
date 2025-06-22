@@ -25,6 +25,7 @@
     padding: 10px;
     border-radius: 5px;
     box-shadow: 0 2px 10px rgba(71, 70, 70, 0.493);
+    display: none; /* Initially hidden */
     z-index: 1000;
 
     a{
@@ -73,6 +74,17 @@ h1 {
     margin-right: 10px;
 }
 
+/* Window Styling */
+.window-buttons {
+    position: absolute;
+    top: 00px;
+    right: 30px;
+    width: 90px;
+    height: 2em;
+    z-index: 1001;
+    display: block;
+}
+
 /* Responsive Design */
 
 @media (prefers-color-scheme: dark) {
@@ -104,3 +116,29 @@ h1 {
         color: #4a90e2;
     }
 }
+
+/* Game Specific Styles */
+.dice {
+    font-size: 4em;
+    width: 2em;
+    margin: 1.5em auto;
+    transform-style: preserve-3d;
+    transform: perspective(15cm) rotateX(-15deg) rotateY(30deg);
+}
+
+.dice_side {
+  position: absolute;
+  width: 2em;
+  height: 2em;
+  background: rgba(100,100,100,0.3);
+  border: 1px solid red;
+  text-align: center;
+  line-height: 2em;
+}
+
+.front {transform: translateZ(1em);}
+.top {transform: rotateX(90deg) translateZ(1em);}
+.right {transform: rotateY(90deg) translateZ(1em);}
+.left {transform: rotateY(-90deg) translateZ(1em);}
+.bottom {transform: rotateX(-90deg) translateZ(1em);}
+.back {transform: rotateY(-180deg) rotateZ(180deg) translateZ(1em);}

@@ -9,9 +9,11 @@
     <link rel="icon" href="icons/tabletop-pwa-icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="icons/tabletop-pwa-icon-192.png" sizes="192x192" type="image/png">
     <link rel="stylesheet" href="css/tabletop2025.css">
+    <link rel="stylesheet" href="css/tabletop_animations.css">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <meta name="description" content="A Progressive Web App for tabletop gaming enthusiasts.">
+    <content type="text/html; charset=UTF-8">
 </head>
 <body>
     <div class="tabletop-viewport" id="tabletop-viewport">
@@ -24,20 +26,67 @@
         }
     </script>
     <script src="js/tabletop.js"></script>
-    <script lang="javascript">
+    <script type="text/javascript">
         // Initialize the TableTop instance
         var myTableTop = new TableTop();
+
+        /* Event listeners for viewport and window management */
+        self.addEventListener('keyup', (event) => {
+            console.log('Key pressed:', event.key);
+            if (event.key === 'c' && event.altKey == true) {
+                const configElement = document.getElementById('tabletop-viewport-config');
+                console.log(configElement);
+                if (configElement.style.display == 'block') {
+                    configElement.style.opacity = '1';
+                    configElement.style.animation = 'fadeIn 3s ease 1 reverse';
+                    setTimeout(() => {
+                        configElement.style.opacity = '0';
+                        configElement.style.display = 'none';
+                    }, 3000); // Wait for the animation to finish before hiding
+
+                } else {
+                    configElement.style.display = 'hidden';
+                    configElement.style.opacity = '0';
+                    configElement.style.display = 'block';
+                    configElement.style.animation = 'fadeIn 3s ease 1 forwards';
+                }
+            }
+            if(event.key === 'd' && event.altKey == false) {
+                myTableTop.Dice.addDice('d6', 1);
+            }
+            if(event.key === 'r' && event.altKey == false) {
+                myTableTop.Dice.rollDice();
+            }
+            if(event.key === 'w' && event.altKey == true) {
+                myTableTop.WindowManager.createWindow({
+                    title: 'New Window',
+                    content: '<p>This is a new window created by the TableTop PWA.</p>',
+                    style: {
+                        height: 300,
+                        width: 300,
+                        animation: "slamToTable 3s 1 forwards",
+                    },
+                    onClose: function() {
+                        console.log('Window closed');
+                    }
+                });
+                
+            }
+        })
+
     </script>
     <a href="#" onclick="myTableTop.setBatch(1);">Set Batch 1</a>
     <a href="javascript:myTableTop.setBatch(200);">Set Batch 2</a>
     <a href="javascript:myTableTop.clearBatch();">Set Batch 0</a>
     </div>
-    <div class="tabletop-viewport-config">
+    <div id="tabletop-dice" class="tabletop-dice">
+    </div>
+    <div class="tabletop-viewport-config" id="tabletop-viewport-config">
         <h2>Viewport Configuration</h2>
         <p>Setting the Viewport to specific Parameters
             <ul>
                 <li><a href="#" onclick="myTableTop.ViewPort.printViewportData()">Reset to default</a></li>
-                <li><a href="#">Orientation</a><input type="range" min="0" max="360" step="10" onchange="myTableTop.ViewPort.rotateViewPort(this.value);"></li>
+                <li><input type="range" title="Orientation" label="Orientation of ViewPort" min="0" max="360" step="10" onchange="myTableTop.ViewPort.rotateViewPort(this.value);"></li>
             </ul>
         
         </p>

@@ -45,11 +45,149 @@ class TableTop_ViewPort {
         }
 }
 
+class TableTop_Dice{
+    constructor() {
+        this.dice = [];
+        this.lastRoll = null;
+    }
+
+    addDice(diceType, count) {
+        if (typeof diceType !== 'string' || typeof count !== 'number' || count <= 0) {
+            throw new Error("Invalid dice type or count");
+        }
+        for (let i = 0; i < count; i++) {
+            this.dice.push(diceType);
+        }
+        console.log(`Added ${count} ${diceType} dice`);
+    }
+
+    rollDice() {
+        this.lastRoll = this.dice.map(die => {
+            const sides = parseInt(die.replace('d', ''));
+            if (isNaN(sides) || sides <= 0) {
+                throw new Error(`Invalid die type: ${die}`);
+            }
+            return Math.floor(Math.random() * sides) + 1;
+        });
+        return this.lastRoll;
+    }
+
+    showDice() {
+        if (this.dice.length === 0) { this.dice.
+            console.warn("No dice to show");
+            return;
+        }
+        console.log("Current dice:", this.dice.join(', '));
+        console.log("Last roll:", this.lastRoll ? this.lastRoll.join(', ') : "No rolls yet");
+        const diceContainer = document.getElementById('tabletop-dice');
+        if (!diceContainer) {
+            console.warn("Dice container not found in the DOM");
+            return;
+        }
+        diceContainer.innerHTML = ''; // Clear previous dice display
+        this.dice.forEach((die,index) => {
+            const dieElement = document.createElement('div');
+            dieElement.className = 'dice';
+            dieElement.textContent = die; // Display the type of die
+            if(die === 'd6') {
+                // Example for a D6 die, you can customize this for other dice types
+                dieElement.innerHTML = `<div class="dice_side front">`+ this.lastRoll.at(index) + `</div>
+                <div class="dice_side back">`+ (7-this.lastRoll.at(index)) +`</div>
+                <div class="dice_side right">`+ (4-this.lastRoll.at(index)) +`</div>
+                <div class="dice_side left">3</div>
+                <div class="dice_side top">5</div>
+                <div class="dice_side bottom">2</div>`;
+            }
+            diceContainer.appendChild(dieElement);
+        })
+    }
+}
+
+class TableTop_Window{
+    constructor(windowObject){
+        // This class represents a window in the tabletop game, with properties for ID, name, dimensions, and rotation.
+        this.element=document.createElement('div'); // Create a new div element for the window
+        this.element.id = 'window-' + Math.random().toString(36).substring(2, 15); // Unique ID for the window
+        this.element.title = "TableTop Window"; // Default name if none provided
+        this.element.style.border = '1px dotted yellow'; // Basic styling for the window
+        this.element.style.width = Math.max(window.innerWidth/10, 320)+"px"; // Minimum width of 320px or 10% of the window width
+        this.element.style.height = Math.max(window.innerHeight/10, 240)+"px"; // Minimum height of 240px or 10% of the window height
+        this.element.style.transform = `rotate(`+Math.round(Math.random()*360)+`deg)`; // Apply rotation
+        this.element.style.display = 'block'; // Ensure the window is displayed
+        this.element.style.position = 'absolute'; // Position the window absolutely
+        this.childOf = null; // Parent element for the window, if specified
+        if(typeof windowObject === "object") {
+            for (const [key, value] of Object.entries(windowObject)) {
+                console.log(`Setting property ${key} to ${value}`);
+                if (key === 'id') {
+                    // nope id has to be unique and be set by the constructor
+                    console.warn("ID is already set by the constructor, ignoring:", value);
+                } else if (key === 'childOf') {
+                    this.childOf= value; // Set the parent element if specified
+                } else if (key === 'style' && typeof value === 'object') {
+                    // Apply styles if provided as an object
+                    for (const [styleKey, styleValue] of Object.entries(value)) {
+                        this.element.style[styleKey] = styleValue; // Set each style property
+                    }
+                }
+                else {
+                    this.element.setAttribute(key, value); // Set other attributes on the element
+                }
+            }
+        }
+        if (this.childOf && typeof this.childOf === 'string' && this.childOf instanceof HTMLElement) 
+        {
+            const parentElement = document.getElementById(this.childOf);
+            if (parentElement) {
+                parentElement.appendChild(this.element); // Append the window to the specified parent element
+                console.log(`Window appended to parent: ${this.childOf}`);
+            } else {
+                console.warn(`Parent element with ID ${this.childOf} not found. Appending to viewport instead.`);
+                document.getElementById('tabletop-viewport').appendChild(this.element); // Fallback to viewport
+                this.childOf = null; // Reset childOf to null since it was not found
+            }
+        }
+        else  
+        {
+            document.getElementById('tabletop-viewport').appendChild(this.element); // Append the window to the viewport
+        }
+    }
+
+    showWindow() {
+        // Logic to display the window
+        console.log(`Showing window: ${this.windowName} with ID: ${this.windowID}`);
+        document.getElementById('tabletop-viewport').style.display = 'block';
+    }
+}
+
+class TableTop_WindowManager{
+    // This class manages the viewport for a tabletop game, including screen dimensions and orientation.
+    constructor() {
+        this.windows = []; // Array to hold all windows
+    }
+
+    createWindow(windowName) {
+        const newWindow = new TableTop_Window(windowName);
+        this.windows.push(newWindow);
+        console.log(`Created new window: ${newWindow.element.title} with ID: ${newWindow.element.id}`);
+        return newWindow;
+    }
+
+    
+}
+
+
+
+
+// Basic classes for a tabletop game
+
 
 class TableTop {
     constructor() {
         this.Game = new Game("TableTop Game");
         this.ViewPort = new TableTop_ViewPort();
+        this.WindowManager = new TableTop_WindowManager();
+        this.Dice = new TableTop_Dice();
     }
 
     
