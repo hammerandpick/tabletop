@@ -1,11 +1,11 @@
-const CACHE_NAME = 'myPWA-cache-v1';
+const CACHE_NAME = 'tabletop-app-cache-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/manifest.json',
-    '/favicon.ico',
-    '/styles.css',
-    '/main.js'
+    '../',
+    '../index.html',
+    '../manifest.json',
+    '../favicon.ico',
+    '../css/tabletop2025.css',
+    '../js/tabletop.js'
 ];
 
 // Install event: cache files

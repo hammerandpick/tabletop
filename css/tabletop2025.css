@@ -1,0 +1,72 @@
+* {
+  outline: 1px dotted red; /* Change color as needed */
+}
+
+.tabletop-viewport {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+}
+
+h1 {
+    color: #333;
+}
+
+.logo {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #4a90e2;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo::before {
+    content: url("../icons/tabletop-pwa-icon-64.png");
+    display: inline-block;
+    width: 64px;
+    height: 64px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+
+    h1 {
+        color: #e0e0e0;
+    }
+
+    .logo {
+        color: #bb86fc;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    body {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    h1 {
+        color: #000000;
+    }
+
+    .logo {
+        color: #4a90e2;
+    }
+}
