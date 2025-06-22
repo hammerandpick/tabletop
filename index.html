@@ -14,7 +14,7 @@
     <meta name="description" content="A Progressive Web App for tabletop gaming enthusiasts.">
 </head>
 <body>
-    <div class="tabletop-viewport">
+    <div class="tabletop-viewport" id="tabletop-viewport">
     <h1 class="logo">Tabletop</h1>
     <script>
         if ('serviceWorker' in navigator) {
@@ -23,6 +23,24 @@
                 .catch(err => console.error('Service Worker Registration Failed:', err));
         }
     </script>
+    <script src="js/tabletop.js"></script>
+    <script lang="javascript">
+        // Initialize the TableTop instance
+        var myTableTop = new TableTop();
+    </script>
+    <a href="#" onclick="myTableTop.setBatch(1);">Set Batch 1</a>
+    <a href="javascript:myTableTop.setBatch(200);">Set Batch 2</a>
+    <a href="javascript:myTableTop.clearBatch();">Set Batch 0</a>
+    </div>
+    <div class="tabletop-viewport-config">
+        <h2>Viewport Configuration</h2>
+        <p>Setting the Viewport to specific Parameters
+            <ul>
+                <li><a href="#" onclick="myTableTop.ViewPort.printViewportData()">Reset to default</a></li>
+                <li><a href="#">Orientation</a><input type="range" min="0" max="360" step="10" onchange="myTableTop.ViewPort.rotateViewPort(this.value);"></li>
+            </ul>
+        
+        </p>
     </div>
 </body>
 </html>

@@ -5,7 +5,8 @@ const urlsToCache = [
     '../manifest.json',
     '../favicon.ico',
     '../css/tabletop2025.css',
-    '../js/tabletop.js'
+    '../js/tabletop.js',
+    '../js/main.js'
 ];
 
 // Install event: cache files
