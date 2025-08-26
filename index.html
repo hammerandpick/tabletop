@@ -18,9 +18,22 @@
 <body>
     <div class="tabletop-viewport" id="tabletop-viewport">
     <h1 class="logo">Tabletop</h1>
+    <div class="tabletop-menu">
+        <button class="tabletop-menu-button" id="tabletop-menu-button" onclick="myTableTop.openMenu('tabletop-main-menu-content')">Menu</button>
+        <div class="tabletop-menu-content" id="tabletop-main-menu-content">
+            <ul>
+                <li><a href="#" onclick="myTableTop.ViewPort.printViewportData()">Viewport Data</a></li>
+                <li><a href="#" onclick="myTableTop.ViewPort.resetViewPort()">Reset Viewport</a></li>
+                <li><a href="#" onclick="myTableTop.ViewPort.toggleGrid()">Toggle Grid</a></li>
+                <li><a href="#" onclick="myTableTop.ViewPort.toggleBackground()">Toggle Background</a></li>
+                <li><a href="#" onclick="myTableTop.ViewPort.toggleDiceTray()">Toggle Dice Tray</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="tabletop-menu" id="tabletop-menu-root"></div>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('js/service-worker.js')
+            navigator.serviceWorker.register('./js/service-worker.js') // will fail if the file is opened via file:// aka. local filesystem
                 .then(() => console.log('Service Worker Registered'))
                 .catch(err => console.error('Service Worker Registration Failed:', err));
         }
