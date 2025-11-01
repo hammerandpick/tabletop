@@ -1,3 +1,6 @@
 [submodule "opensource/qrcodejs"]
 	path = opensource/qrcodejs
 	url = https://github.com/davidshimjs/qrcodejs
+[submodule "gamemodules/tt-xxo"]
+	path = gamemodules/tt-xxo
+	url = https://github.com/hammerandpick/tabletop-xxo
