@@ -45,148 +45,107 @@ class TableTop_ViewPort {
         }
 }
 
-class TableTop_Dice{
-    constructor(diceType,parentElement) {
-        this.diceID = "diceID-" + Math.random().toString(36).substring(2, 15); // Unique ID for the dice
-        this.diceName= "TableTop Standard Dice"; // Default name for the dice
-        this.diceType = diceType || "d6"; // Default die type
-        this.diceMin= 1; // Minimum value for the dice
-        if(this.diceType !== "d6") {
-            this.diceMax= parseInt(this.diceType.substring(1)); // Set maximum value based on die type (e.g., d20, d10)
+class TableTop_Die{
+    #lastRoll=null;
+    constructor(diceType='d6') {
+        this.divElement = document.createElement('input'); // Create a div element for the dice
+        Object.defineProperty(this, 'id', {
+            value: "wuerfelID_" + Math.random().toString(36).substring(2, 15), // Unique ID for the dice
+            writable: false,
+            configurable: false
+        });
+        this.divElement.id = this.id; // Set the ID of the div element
+        this.name= "TableTop Standard Dice"; // Default name for the dice
+        this.min = 1; // Minimum value for the dice        
+        try {
+            if (typeof diceType === 'number' && diceType > 1) {
+                this.max = diceType; // Maximum value for the dice
+            }  
+            else if (typeof diceType === 'string' && diceType.startsWith('d')) {
+                this.max  = parseInt(diceType.substring(1))
+            }
+        } catch (error) {
+            console.warn("Invalid dice type provided. Defaulting to d6.");
+            this.max = 6; // Default die type
         }
-        else {
-            this.diceMax= 6; // Maximum value for the dice
-        }
-        this.lastRoll= null; // Store the last roll result
+        this.className = 'tabletop-wuerfel-d' + Math.min(this.max,6); // Class name for styling
+        this.divElement.className = 'tabketop-dice'; // Set the class name for styling'
+        //this.divElement.style.display = 'none'; // Initially hide the dice container
+        this.divElement.type = 'number';
+        this.divElement.min = this.min;
+        this.divElement.max = this.max;
+        this.divElement.value = this.min;
         this.rollCount = 0; // Count of rolls made
         this.rollHistory = []; // History of rolls
-        this.divElement = document.createElement('div'); // Create a container for the dice
-        this.parentElement = parentElement || null; // Parent element for the dice, if specified
-        this.divElement.id = this.diceID; // Set the ID for the dice container
-        this.divElement.className = 'dice'; // Set the class for styling
-        this.dieArray = [];
+        this.diceType = 'd' + this.max; // Type of dice (e.g., d6, d20)
+        this.dieArray = []; // Array to hold shifted die valuesS
     }
-
+    
     roll() {
-        if (!this.diceType || !this.diceMax) {
+        if (!this.diceType || !this.max) {
             console.warn("Dice type or maximum value not set. Cannot roll.");
             return;
         }
-        const rollResult = Math.floor(Math.random() * this.diceMax) + this.diceMin; // Generate a random roll
-        this.lastRoll = rollResult; // Store the last roll result
+        const rollResult = Math.floor(Math.random() * this.max) + this.min; // Generate a random roll
+        this.#lastRoll = rollResult; // Store the last roll result
         this.rollCount++; // Increment the roll count
         this.rollHistory.push(rollResult); // Add the roll result to the history
         if(this.rollHistory.length > 10) {
             this.rollHistory.shift(); // Keep only the last 10 rolls in history
         }
-        this.dieArray=[]; // Initialize the die array
         
         // first half of the die array 
-        for (let i = this.lastRoll; i <= this.diceMax; i++) {
+        this.dieArray = []; // Reset the die array
+        for (let i = this.#lastRoll; i <= this.max; i++) {
             this.dieArray.push(i); // Create an array of shifted dice values
         }
-        for (let i = 1; i < this.lastRoll; i++) {
+        for (let i = this.min; i < this.lastRoll; i++) {
             this.dieArray.push(i); // Create an array of shifted dice values
         }
         console.log(`Rolled a ${this.diceType}: ${rollResult}`);
-
+        this.divElement.value = rollResult; // Update the dice container value
+        return rollResult; // Return the roll result
     }
 
-    linkToParent() {
-        if (this.parentElement && typeof this.parentElement === 'string') {
-            const parentElement = document.getElementById(this.parentElement);
-            if (parentElement) {
-                parentElement.appendChild(this.divElement); // Append the dice container to the specified parent element
-                console.log(`Dice linked to parent: ${this.parentElement}`);
-            } else {
-                console.warn(`Parent element with ID ${this.parentElement} not found. Appending to viewport instead.`);
-                document.getElementById('tabletop-viewport').appendChild(this.divElement); // Fallback to viewport
-            }
-        }
-        else if (this.parentElement && this.parentElement instanceof HTMLElement) {
-            this.parentElement.appendChild(this.divElement); // Append the dice container to the specified parent element
-            console.log(`Dice linked to parent: ${this.parentElement.id}`);
-        } else {
-            document.getElementById('tabletop-viewport').appendChild(this.divElement); // Append the dice container to the viewport
-            console.log("Dice appended to viewport");
-        }
-        return this.divElement; // Return the dice container element
-    }
-    
-    getLastRoll() {
-        if (this.lastRoll === null) {
+    get LastRoll() {
+        if (this.#lastRoll === null) {
             console.warn("No rolls have been made yet.");
+            this.roll(); // Make a roll if none exist
             return null;
         }
-        return this.lastRoll; // Return the last roll result
+        return this.#lastRoll; // Return the last roll result
     }
 
     shiftDiceArray(diceNumber,diceArrayLength) {
-        return  (diceNumber + this.lastRoll) > diceArrayLength ?  ( (diceNumber + this.lastRoll)-diceArrayLength) : (diceNumber + this.lastRoll); // Shift the dice array based on the last roll
+        return  (diceNumber + this.#lastRoll) > diceArrayLength ?  ( (diceNumber + this.#lastRoll)-diceArrayLength) : (diceNumber + this.#lastRoll); // Shift the dice array based on the last roll
     }
 
-    show() {
+    show(parentElement = null) {
         if (!this.divElement) {
             console.warn("Dice element not found. Cannot show dice.");
             return;
         }
         else {
-            let inverseDiceArray = this.dieArray.flatMap(x => this.dieArray.length+1-x); // Create an inverse array of the die values
-            console.log("Inverse Dice Array:", inverseDiceArray);
-            switch (this.diceType) {
-            
-                case 'd6':  
-                    this.divElement.innerHTML = `<div class="dice_side front">${this.lastRoll}</div>`
-                    + `<div class="dice_side back">${inverseDiceArray[0]}</div>`
-                    + `<div class="dice_side right">${this.dieArray[2]}</div>`
-                    + `<div class="dice_side left">${inverseDiceArray[2]}</div>`
-                    + `<div class="dice_side top">${this.dieArray[4]}</div>`
-                    + `<div class="dice_side bottom">${inverseDiceArray[4]}</div>`;
-                    break;
-                case 'd20':
-                    this.divElement.innerHTML = `<div class="dice_side front">${this.lastRoll}</div>`
-                    + `<div class="dice_side back">${21 - this.lastRoll}</div>` 
-                    break;
-                default:
-                    this.divElement.innerHTML = `<div class="dice_side front">${this.lastRoll}</div>`
-                    + `<div class="dice_side back">TT</div>`;
-                    break;
+            if (parentElement && parentElement instanceof HTMLElement) {
+                parentElement.appendChild(this.divElement); // Append the dice container to the specified parent element
+            }
+            else {
+                document.getElementById('tabletop-dice').appendChild(this.divElement); // Append the dice container to the viewport
             }
             this.divElement.style.display = 'block'; // Show the dice container
-            return this.divElement; // Return the dice container element
         }
+        return document.getElementById(this.id);
     }
 
-    /*
-    showDice() {
-        if (this.dice.length === 0) { this.dice.
-            console.warn("No dice to show");
+    hide() {
+        if (!this.divElement) {
+            console.warn("Dice element not found. Cannot hide dice.");
             return;
         }
-        console.log("Current dice:", this.dice.join(', '));
-        console.log("Last roll:", this.lastRoll ? this.lastRoll.join(', ') : "No rolls yet");
-        const diceContainer = document.getElementById('tabletop-dice');
-        if (!diceContainer) {
-            console.warn("Dice container not found in the DOM");
-            return;
+        else {
+            this.divElement.style.display = 'none'; // Hide the dice container
         }
-        diceContainer.innerHTML = ''; // Clear previous dice display
-        this.dice.forEach((die,index) => {
-            const dieElement = document.createElement('div');
-            dieElement.className = 'dice';
-            dieElement.textContent = die; // Display the type of die
-            if(die === 'd6') {
-                // Example for a D6 die, you can customize this for other dice types
-                dieElement.innerHTML = `<div class="dice_side front">`+ this.lastRoll.at(index) + `</div>
-                <div class="dice_side back">`+ (7-this.lastRoll.at(index)) +`</div>
-                <div class="dice_side right">`+ (4-this.lastRoll.at(index)) +`</div>
-                <div class="dice_side left">3</div>
-                <div class="dice_side top">5</div>
-                <div class="dice_side bottom">2</div>`;
-            }
-            diceContainer.appendChild(dieElement);
-        })
-    }*/
+    }
 }
 
 class TableTop_Window{
@@ -221,6 +180,7 @@ class TableTop_Window{
                 }
             }
         }
+        /*
         if (this.childOf && typeof this.childOf === 'string' && this.childOf instanceof HTMLElement) 
         {
             const parentElement = document.getElementById(this.childOf);
@@ -236,7 +196,7 @@ class TableTop_Window{
         else  
         {
             document.getElementById('tabletop-viewport').appendChild(this.element); // Append the window to the viewport
-        }
+        } */
     }
 
     showWindow() {
@@ -366,12 +326,12 @@ class TableTop {
         this.ViewPort = new TableTop_ViewPort();
         this.WindowManager = new TableTop_WindowManager();
         this.Dice = {};
-        this.Dice['d6'] = new TableTop_Dice('d6'); // Default dice type
         this.Menu = []; // Initialize the menu object
         this.Menu['main'] = new TableTop_Menu(this, 'tabletop-menu-root','Main Menu'); // Main menu instance
         this.Menu['main'].addItem('New Game',  '#', 'Start a new game');
         this.Menu['main'].addItem('Configuration', '#', 'Game configuration settings');
         this.Menu['main'].addItem('Set Batch', '#', 'Get help and support', 'myTableTop.setBatch(5)');
+        this.moduleList = []; // List of registered game modules
     }
 
     loadFile(file) {
@@ -381,6 +341,42 @@ class TableTop {
             throw new Error("Invalid file provided");
         }
         console.log(`Loading file: ${file.name}`);
+    }
+
+    addDie(dieType, parentElement = null) {
+        // Logic to add a die to the game
+        const newDie = new TableTop_Die(dieType, parentElement);
+        this.Dice[newDie.id] = newDie;
+        console.log(`Added die: ${dieType} with ID: ${newDie.id}`);
+        return newDie;
+    }
+
+    listDice() {
+        // Logic to list all dice in the game
+        console.log("Current dice in the game:");
+        for (const [id, die] of Object.entries(this.Dice)) {
+            console.log(`Die ID: ${id}, Type: ${die.diceType}, Last Roll: ${die.LastRoll}`);
+        }
+    }
+
+    linkDiceToParent(dieID, parentElement) {
+        // Logic to link a die to a parent element
+        if (!parentElement || !(parentElement instanceof HTMLElement)) {
+            parentElement = document.getElementById('tabletop-dice'); // Default to dice container
+        }
+
+        const die = this.Dice[dieID];
+        if (typeof die === "undefined") {
+            for (let [myDie, myDieObject] of Object.entries(this.Dice)) {
+                document.getElementById('tabletop-dice').appendChild(myDieObject.divElement); // Append the dice container to the viewport
+                console.log(`Linked die ID: ${myDie} to parent element.`);
+            };
+        }
+        else
+        {
+            document.getElementById('tabletop-dice').appendChild(die.divElement); // Append the dice container to the viewport
+            console.log(`Linked die ID: ${dieID} to parent element.`);
+        }
     }
 
     setBatch(count) {
@@ -423,12 +419,29 @@ class TableTop {
         if (!module || !module.name) {
             throw new Error("Invalid module provided");
         }
-        console.log(`Registering module: ${module.name}`);
-        if (typeof module.initialize === 'function') {
-            module.initialize(); // Call the module's initialize method if it exists
+        try {
+            this.moduleList.push(module);
+            console.log(`Registering module: ${module.name}`);
+        } catch (error) {
+            console.error("Failed to register module:", error);
         }
-        if (typeof module.prepare === 'function') {
-            module.prepare(); // Call the module's initialize method if it exists
+        myTableTop.initializeModule();
+    }
+
+    initializeModule(){
+        if (!this.moduleList || this.moduleList.length === 0) {
+            console.warn("No modules registered to initialize.");
+            return;
+        }
+        else {
+            this.moduleList.forEach(module => {
+                if (typeof module.initialize === 'function') {
+                module.initialize(); // Call the module's initialize method if it exists
+                }
+                if (typeof module.prepare === 'function') {
+                    module.prepare(); // Call the module's initialize method if it exists
+                }
+            });
         }
     }
 
