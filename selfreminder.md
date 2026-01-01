@@ -1,0 +1,1 @@
+This file is meant to be the programming reminder and journal for the tabletop game.

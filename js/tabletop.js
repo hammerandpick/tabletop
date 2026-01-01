@@ -47,6 +47,7 @@ class TableTop_ViewPort {
 
 class TableTop_Die{
     #lastRoll=null;
+    #rollCount=0;
     constructor(diceType='d6') {
         this.divElement = document.createElement('input'); // Create a div element for the dice
         Object.defineProperty(this, 'id', {
@@ -68,14 +69,12 @@ class TableTop_Die{
             console.warn("Invalid dice type provided. Defaulting to d6.");
             this.max = 6; // Default die type
         }
-        this.className = 'tabletop-wuerfel-d' + Math.min(this.max,6); // Class name for styling
-        this.divElement.className = 'tabketop-dice'; // Set the class name for styling'
+        this.divElement.className = 'tabletop-die'; // Set the class name for styling'
         //this.divElement.style.display = 'none'; // Initially hide the dice container
         this.divElement.type = 'number';
         this.divElement.min = this.min;
         this.divElement.max = this.max;
         this.divElement.value = this.min;
-        this.rollCount = 0; // Count of rolls made
         this.rollHistory = []; // History of rolls
         this.diceType = 'd' + this.max; // Type of dice (e.g., d6, d20)
         this.dieArray = []; // Array to hold shifted die valuesS
@@ -88,7 +87,7 @@ class TableTop_Die{
         }
         const rollResult = Math.floor(Math.random() * this.max) + this.min; // Generate a random roll
         this.#lastRoll = rollResult; // Store the last roll result
-        this.rollCount++; // Increment the roll count
+        this.#rollCount++; // Increment the roll count
         this.rollHistory.push(rollResult); // Add the roll result to the history
         if(this.rollHistory.length > 10) {
             this.rollHistory.shift(); // Keep only the last 10 rolls in history
@@ -106,6 +105,8 @@ class TableTop_Die{
         this.divElement.value = rollResult; // Update the dice container value
         return rollResult; // Return the roll result
     }
+
+    get RollCount(){ return this.#rollCount; }
 
     get LastRoll() {
         if (this.#lastRoll === null) {
