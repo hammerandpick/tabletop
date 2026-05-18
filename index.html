@@ -38,58 +38,84 @@
                 .catch(err => console.error('Service Worker Registration Failed:', err));
         }
     </script>
-    <script type ="text/javascript" src="js/tabletop.js"></script>
-    <script type="text/javascript" src="opensource/qrcodejs/qrcode.js"></script>
-    <script type="text/javascript">
-        // Initialize the TableTop instance
-        var myTableTop = new TableTop();
 
-        /* Event listeners for viewport and window management */
-        self.addEventListener('keyup', (event) => {
-            console.log('Key pressed:', event.key);
-            if (event.key === 'c' && event.altKey == true) {
-                const configElement = document.getElementById('tabletop-viewport-config');
-                console.log(configElement);
-                if (configElement.style.display == 'block') {
-                    configElement.style.opacity = '1';
-                    configElement.style.animation = 'fadeIn 3s ease 1 reverse';
-                    setTimeout(() => {
-                        configElement.style.opacity = '0';
-                        configElement.style.display = 'none';
-                    }, 3000); // Wait for the animation to finish before hiding
+    <script type="module">
+      import { TableTop, attachGlobals } from './js/tabletop_modules/index.js';
+      // Attach legacy globals
+      attachGlobals();
 
-                } else {
-                    configElement.style.display = 'hidden';
-                    configElement.style.opacity = '0';
-                    configElement.style.display = 'block';
-                    configElement.style.animation = 'fadeIn 3s ease 1 forwards';
-                }
-            }
-            if(event.key === 'd' && event.altKey == false) {
-                myTableTop.Dice.addDice('d6', 1);
-            }
-            if(event.key === 'r' && event.altKey == false) {
-                myTableTop.Dice.rollDice();
-            }
-            if(event.key === 'w' && event.altKey == true) {
-                myTableTop.WindowManager.createWindow({
-                    title: 'New Window',
-                    content: '<p>This is a new window created by the TableTop PWA.</p>',
-                    style: {
-                        height: 300,
-                        width: 300,
-                        animation: "slamToTable 3s 1 forwards",
-                    },
-                    onClose: function() {
-                        console.log('Window closed');
-                    }
-                });
-                
-            }
+      // Initialize and expose globally
+      window.myTableTop = new TableTop();
+
+      /* Event listeners for viewport and window management */
+      self.addEventListener('keyup', (event) => {
+          console.log('Key pressed:', event.key);
+          if (event.key === 'c' && event.altKey == true) {
+              const configElement = document.getElementById('tabletop-viewport-config');
+              console.log(configElement);
+              if (configElement.style.display == 'block') {
+                  configElement.style.opacity = '1';
+                  configElement.style.animation = 'fadeIn 3s ease 1 reverse';
+                  setTimeout(() => {
+                      configElement.style.opacity = '0';
+                      configElement.style.display = 'none';
+                  }, 3000); // Wait for the animation to finish before hiding
+
+              } else {
+                  configElement.style.display = 'hidden';
+                  configElement.style.opacity = '0';
+                  configElement.style.display = 'block';
+                  configElement.style.animation = 'fadeIn 3s ease 1 forwards';
+              }
+          }
+          if(event.key === 'd' && event.altKey == false) {
+              myTableTop.Dice.addDice('d6', 1);
+          }
+          if(event.key === 'r' && event.altKey == false) {
+              myTableTop.Dice.rollDice();
+          }
+          if(event.key === 'w' && event.altKey == true) {
+              myTableTop.WindowManager.createWindow({
+                  title: 'New Window',
+                  content: '<p>This is a new window created by the TableTop PWA.</p>',
+                  style: {
+                      height: 300,
+                      width: 300,
+                      animation: "slamToTable 3s 1 forwards",
+                  },
+                  onClose: function() {
+                      console.log('Window closed');
+                  }
+              });
+              
+          }
+      })
+
+      // Dynamically load qrcode library and initialize it after load
+      const qr = document.createElement('script');
+      qr.src = './opensource/qrcodejs/qrcode.js';
+      document.head.appendChild(qr);
+      qr.onload = () => {
+        var qrcode = new QRCode(document.getElementById("qrcode"), {
+          width : 100,
+          height : 100
+        });
+        qrcode.makeCode("Hello World");
+      }
+
+      // Load game module (ES module) and register with myTableTop
+      import('./gamemodules/tt-xxo/tt-xxo.js')
+        .then(mod => {
+          if (typeof mod.registerModule === 'function') {
+            mod.registerModule(window.myTableTop);
+          } else if (typeof mod.default === 'function') {
+            mod.default(window.myTableTop);
+          } else {
+            console.warn('Game module did not export registerModule or default');
+          }
         })
-
+        .catch(err => console.error('Failed to load game module:', err));
     </script>
-    <script type="text/javascript" src="./gamemodules/tt-xxo/tt-xxo.js"></script>
     <a href="#" onclick="myTableTop.setBatch(1);">Set Batch 1</a>
     <a href="javascript:myTableTop.setBatch(200);">Set Batch 2</a>
     <a href="javascript:myTableTop.clearBatch();">Set Batch 0</a>
@@ -107,13 +133,6 @@
         </p>
     </div>
     <div id="qrcode" style="width:100px; height:100px; margin-top:15px;"></div>
-    <script type="text/javascript">
-var qrcode = new QRCode(document.getElementById("qrcode"), {
-	width : 100,
-	height : 100
-});
-qrcode.makeCode("Hello World");
-
-</script>
+    
 </body>
 </html>
