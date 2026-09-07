@@ -17,6 +17,19 @@
     align-items: center;
 }
 
+.tabletop-die {
+    width: 2em;
+    height: 2em;
+    font-size: 2em;
+    text-align: center;
+    line-height: 2em;
+    border: 2px solid #4a90e2;
+    border-radius: 10%;
+    background-color: rgba(74, 144, 226, 0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
 .tabletop-viewport-config{
     position: absolute;
     top: 30%;

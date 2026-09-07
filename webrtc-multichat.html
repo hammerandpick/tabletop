@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="de">
+<meta charset="utf-8" />
+<title>WebRTC DataChannel Multi-Peer (manual signaling)</title>
+
+<h3>WebRTC DataChannel – Multi-Peer (manuelles Signaling)</h3>
+
+<div>
+  <label>Mein ID:
+    <input id="myId" value="A" size="6">
+  </label>
+  <label>Remote ID:
+    <input id="remoteId" value="B" size="6">
+  </label>
+  <button id="btnOffer">Offer an Remote erzeugen</button>
+</div>
+
+<p><b>Signaling</b>: JSON aus <i>Ausgehend</i> kopieren → in anderem Tab in <i>Eingehend</i> einfügen → <i>Anwenden</i>.</p>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap;">
+  <div>
+    <div><b>Ausgehend (zum Kopieren)</b></div>
+    <textarea id="outbox" cols="80" rows="10" readonly></textarea>
+  </div>
+  <div>
+    <div><b>Eingehend (zum Einfügen)</b></div>
+    <textarea id="inbox" cols="80" rows="10" placeholder="Hier Signaling-JSON einfügen"></textarea><br>
+    <button id="btnApply">Anwenden</button>
+  </div>
+</div>
+
+<hr>
+
+<div>
+  <label>Senden an:
+    <select id="peerSelect"></select>
+  </label>
+  <label style="margin-left:10px;">
+    <input type="checkbox" id="broadcast"> Broadcast an alle offenen Kanäle
+  </label>
+</div>
+
+<input id="msg" size="60" placeholder="Nachricht">
+<button id="btnSend">Senden</button>
+
+<pre id="log" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap;"></pre>
+
+<script>
+/**
+ * Multi-Peer Prinzip:
+ * - Map<peerId, { pc, dc, localCandidates, iceDonePromise }>
+ * - pro Peer ein RTCPeerConnection + DataChannel
+ *
+ * WebRTC Basics: DataChannel via createDataChannel() und ondatachannel Event. [4](https://webrtc.org/getting-started/data-channels)
+ * Signaling + ICE Candidate Austausch ist extern. [3](https://webrtc.org/getting-started/peer-connections)
+ */
+
+const config = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
+
+const peers = new Map(); // peerId -> peerState
+
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+function log(line) { logEl.textContent += line + "\n"; }
+function myId() { return $("myId").value.trim(); }
+function remoteId() { return $("remoteId").value.trim(); }
+
+function ensurePeerOption(peerId) {
+  const sel = $("peerSelect");
+  if ([...sel.options].some(o => o.value === peerId)) return;
+  const opt = document.createElement("option");
+  opt.value = peerId;
+  opt.textContent = peerId;
+  sel.appendChild(opt);
+  if (!sel.value) sel.value = peerId;
+}
+
+function wireDataChannel(peerId, dc) {
+  dc.onopen = () => {
+    log(`✅ [${peerId}] DataChannel offen`);
+    ensurePeerOption(peerId);
+  };
+  dc.onclose = () => log(`⛔ [${peerId}] DataChannel geschlossen`);
+  dc.onerror = (e) => log(`⚠️ [${peerId}] DataChannel Fehler: ${e?.message || e}`);
+  dc.onmessage = (e) => log(`📩 [${peerId}] ${e.data}`);
+}
+
+function createPeer(peerId, initiator) {
+  const pc = new RTCPeerConnection(config);
+  const state = {
+    pc,
+    dc: null,
+    localCandidates: [],
+    iceDone: null,
+    _iceDoneResolve: null,
+    initiator
+  };
+
+  // Promise, die "ICE complete" signalisiert (für Non-Trickle-JSON Paket)
+  state.iceDone = new Promise(res => state._iceDoneResolve = res);
+
+  pc.onicecandidate = (ev) => {
+    if (ev.candidate) state.localCandidates.push(ev.candidate);
+    // Wenn candidate == null, ist Gathering fertig (Non-trickle Paket).
+    if (!ev.candidate) state._iceDoneResolve();
+  };
+
+  pc.oniceconnectionstatechange = () =>
+    log(`ℹ️ [${peerId}] iceConnectionState=${pc.iceConnectionState}`);
+
+  pc.onconnectionstatechange = () =>
+    log(`ℹ️ [${peerId}] connectionState=${pc.connectionState}`);
+
+  pc.ondatachannel = (ev) => {
+    state.dc = ev.channel;
+    wireDataChannel(peerId, state.dc);
+  };
+
+  if (initiator) {
+    // Initiator erstellt den DataChannel; Gegenstelle bekommt ihn per ondatachannel. [4](https://webrtc.org/getting-started/data-channels)
+    state.dc = pc.createDataChannel("chat");
+    wireDataChannel(peerId, state.dc);
+  }
+
+  peers.set(peerId, state);
+  ensurePeerOption(peerId);
+  return state;
+}
+
+async function buildSignalEnvelope(toPeerId, type, pcState) {
+  // Warten bis ICE Gathering fertig, dann SDP + alle Kandidaten in ein JSON.
+  await pcState.iceDone;
+  return {
+    from: myId(),
+    to: toPeerId,
+    type, // "offer" | "answer"
+    sdp: pcState.pc.localDescription,
+    candidates: pcState.localCandidates
+  };
+}
+
+function setOutbox(obj) {
+  $("outbox").value = JSON.stringify(obj, null, 2);
+}
+
+async function makeOffer(toPeerId) {
+  if (!toPeerId) return log("⚠️ Remote ID fehlt");
+  if (peers.has(toPeerId)) log(`ℹ️ [${toPeerId}] existiert bereits, erstelle neue Offer dennoch (Renegotiation).`);
+
+  const st = peers.get(toPeerId) || createPeer(toPeerId, true);
+
+  const offer = await st.pc.createOffer();
+  await st.pc.setLocalDescription(offer);
+
+  log(`📤 [${toPeerId}] Offer erstellt – warte auf ICE…`);
+  const env = await buildSignalEnvelope(toPeerId, "offer", st);
+  setOutbox(env);
+  log(`✅ [${toPeerId}] Offer+ICE in Outbox (kopieren)`);
+}
+
+async function applyIncoming() {
+  let msg;
+  try {
+    msg = JSON.parse($("inbox").value);
+  } catch {
+    return log("⚠️ Eingehendes JSON ist ungültig.");
+  }
+
+  if (msg.to && msg.to !== myId()) {
+    return log(`⚠️ Nachricht ist an "${msg.to}" adressiert, ich bin "${myId()}". Ignoriere.`);
+  }
+  if (!msg.from || !msg.type || !msg.sdp) {
+    return log("⚠️ Nachricht fehlt from/type/sdp.");
+  }
+
+  const fromPeerId = msg.from;
+  let st = peers.get(fromPeerId);
+
+  // Wenn ich ein Offer empfange, bin ich NICHT Initiator für diesen Peer.
+  if (!st) st = createPeer(fromPeerId, false);
+
+  // Remote Description setzen (Offer/Answer)
+  await st.pc.setRemoteDescription(msg.sdp);
+
+  // ICE Candidates hinzufügen (Batch aus Envelope)
+  if (Array.isArray(msg.candidates)) {
+    for (const c of msg.candidates) {
+      try { await st.pc.addIceCandidate(c); }
+      catch (e) { log(`⚠️ [${fromPeerId}] addIceCandidate Fehler: ${e?.message || e}`); }
+    }
+  }
+
+  log(`✅ [${fromPeerId}] Remote SDP + ICE angewendet (type=${msg.type})`);
+
+  // Wenn wir ein Offer erhalten haben, müssen wir antworten:
+  if (msg.type === "offer") {
+    const answer = await st.pc.createAnswer();
+    await st.pc.setLocalDescription(answer);
+
+    log(`📤 [${fromPeerId}] Answer erstellt – warte auf ICE…`);
+    const env = await buildSignalEnvelope(fromPeerId, "answer", st);
+    setOutbox(env);
+    log(`✅ [${fromPeerId}] Answer+ICE in Outbox (zurückkopieren)`);
+  }
+}
+
+function sendMessage() {
+  const text = $("msg").value;
+  if (!text) return;
+
+  const isBroadcast = $("broadcast").checked;
+  if (isBroadcast) {
+    let sent = 0;
+    for (const [peerId, st] of peers.entries()) {
+      if (st.dc && st.dc.readyState === "open") {
+        st.dc.send(text);
+        sent++;
+      }
+    }
+    log(`📤 Broadcast gesendet an ${sent} Peer(s): ${text}`);
+    return;
+  }
+
+  const target = $("peerSelect").value;
+  const st = peers.get(target);
+  if (!st?.dc || st.dc.readyState !== "open") {
+    return log(`⚠️ [${target}] Kanal nicht offen.`);
+  }
+  st.dc.send(text);
+  log(`📤 [${target}] Gesendet: ${text}`);
+}
+
+// UI wiring
+$("btnOffer").onclick = () => makeOffer(remoteId());
+$("btnApply").onclick = () => applyIncoming();
+$("btnSend").onclick = () => sendMessage();
+</script>
+</html>

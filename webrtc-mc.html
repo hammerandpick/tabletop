@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<meta charset="utf-8" />
+<title>WebRTC DataChannel Multi-Peer (manual signaling)</title>
+
+<h3>WebRTC DataChannel – Multi-Peer (manuelles Signaling)</h3>
+
+<div>
+  <label>Mein ID:
+    <input id="myId" value="A" size="6">
+  </label>
+  <label>Remote ID:
+    <input id="remoteId" value="B" size="6">
+  </label>
+  <button id="btnOffer">Offer an Remote erzeugen</button>
+</div>
+
+<p><b>Signaling</b>: JSON aus <i>Ausgehend</i> kopieren → in anderem Tab in <i>Eingehend</i> einfügen → <i>Anwenden</i>.</p>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap;">
+  <div>
+    <div><b>Ausgehend (zum Kopieren)</b></div>
+    <textarea id="outbox" cols="80" rows="10" readonly></textarea>
+  </div>
+  <div>
+    <div><b>Eingehend (zum Einfügen)</b></div>
+    <textarea id="inbox" cols="80" rows="10" placeholder="Hier Signaling-JSON einfügen"></textarea><br>
+    <button id="btnApply">Anwenden</button>
+  </div>
+</div>
+
+<hr>
+
+<div>
+  <label>Senden an:
+    <select id="peerSelect"></select>
+  </label>
+  <label style="margin-left:10px;">
+    <input type="checkbox" id="broadcast"> Broadcast an alle offenen Kanäle
+  </label>
+</div>
+
+<input id="msg" size="60" placeholder="Nachricht">
+<button id="btnSend">Senden</button>
+
+<pre id="log" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap;"></pre>
+
+<script type="module">
+import { NetCode } from "./js/netcode.js";
+
+const myNetcode = new NetCode({ debug: true });
+myNetcode.setMyID(document.getElementById("myId").value.trim());
+const reportError = (error) =>
+  myNetcode.log(`⚠️ WebRTC-Fehler: ${error?.message || error}`);
+
+document.getElementById("myId").addEventListener("change", (event) => {
+  myNetcode.setMyID(event.target.value.trim());
+});
+document.getElementById("btnOffer").onclick = () =>
+  myNetcode.makeOffer(document.getElementById("remoteId").value.trim()).catch(reportError);
+document.getElementById("btnApply").onclick = () => myNetcode.applyIncoming().catch(reportError);
+document.getElementById("btnSend").onclick = () => myNetcode.sendMessage();
+</script>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>WebRTC Hello World</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        video { border: 2px solid #333; border-radius: 8px; width: 640px; max-width: 100%; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; display: block; margin: 20px auto; }
+    </style>
+</head>
+<body>
+
+    <h1>WebRTC Hello World</h1>
+    <p>Klicken Sie auf den Button, um auf Ihre Kamera und Ihr Mikrofon zuzugreifen.</p>
+    
+    <button id="startBtn">Kamera aktivieren</button>
+    <br>
+    <video id="localVideo" autoplay playsinline muted></video>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const localVideo = document.getElementById('localVideo');
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                // Stream von Kamera und Mikrofon anfordern
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                
+                // Den Stream dem Video-Element zuweisen
+                localVideo.srcObject = stream;
+                startBtn.disabled = true;
+                startBtn.textContent = 'Kamera ist aktiv';
+                
+            } catch (error) {
+                console.error('Fehler beim Zugriff auf die Medien:', error);
+                alert('Kamera konnte nicht gestattet oder gefunden werden.');
+            }
+        });
+    </script>
+
+</body>
+</html>
