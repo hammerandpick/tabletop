@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>WebRTC Hello World</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        video { border: 2px solid #333; border-radius: 8px; width: 640px; max-width: 100%; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; display: block; margin: 20px auto; }
+    </style>
+</head>
+<body>
+
+    <h1>WebRTC Hello World</h1>
+    <p>Klicken Sie auf den Button, um auf Ihre Kamera und Ihr Mikrofon zuzugreifen.</p>
+    
+    <button id="startBtn">Kamera aktivieren</button>
+    <br>
+    <video id="localVideo" autoplay playsinline muted></video>
+
+    [TODO]: Not Working
+
+    <h1>Test page for adapter.js</h1>
+    <script>
+        Object.defineProperty(EventTarget.prototype, 'addEventListener', {
+        writable: false
+    });
+    </script>
+    <script src="./opensource/adapter/release/adapter.js"></script>
+    The browser is: <span id="browser"></span>
+    <br>
+    The browser version is: <span id="browserversion"></span>
+    <script>
+    var browser_display = document.getElementById('browser');
+    var version_display = document.getElementById('browserversion');
+    browser_display.innerHTML = adapter.browserDetails.browser;
+    version_display.innerHTML = adapter.browserDetails.version;
+    </script>
+
+</body>
+</html>
