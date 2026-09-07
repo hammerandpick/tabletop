@@ -4,3 +4,6 @@
 [submodule "gamemodules/tt-xxo"]
 	path = gamemodules/tt-xxo
 	url = https://github.com/hammerandpick/tabletop-xxo
+[submodule "opensource/adapter"]
+	path = opensource/adapter
+	url = https://github.com/webrtc/adapter
